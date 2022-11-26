@@ -17,7 +17,8 @@ const count = {};
 // Stores new commons list
 const newCommons = {};
 
-// Make list of all used css values including commons, and a count of their usage. A new list entry is also introduced called Temp, which holds the raw css value of the currently used commons for later processing.
+// Make list of all used css values including commons, and a count of their usage. 
+//A new list entry is also introduced called Temp, which holds the raw css value of the currently used commons for later processing.
 for (const [url, ruleTypes] of Object.entries(rules)) {
 	for (const [ruleType, value] of Object.entries(ruleTypes)) {
 		if (ruleType == 'c') {
