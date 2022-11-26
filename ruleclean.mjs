@@ -17,8 +17,7 @@ const count = {};
 // Stores new commons list
 const newCommons = {};
 
-// Make list of all used css values including commons, and a count of their usage. Also replace existing
-// commons values in the rules list with its raw css.
+// Make list of all used css values including commons, and a count of their usage. A new list entry is also introduced called Temp, which holds the raw css value of the currently used commons for later processing.
 for (const [url, ruleTypes] of Object.entries(rules)) {
 	for (const [ruleType, value] of Object.entries(ruleTypes)) {
 		if (ruleType == 'c') {
@@ -30,7 +29,7 @@ for (const [url, ruleTypes] of Object.entries(rules)) {
 						count[css] = 1;
 					}
 
-					rules[url]['t'] = css;
+					rules[url]['temp'] = css;
 
 					break;
 				}
@@ -53,7 +52,7 @@ const countArr = Object.keys(count).reduce((countArr, key) => {
 	return countArr;
 }, [])
 
-// Sort the array based on its usage count, in descending order.
+// Sort the array based on its usage count in descending order.
 const sortedCount = countArr.sort((a, b) => b[0] - a[0]);
 
 // Print whole sorted count array for debugging
@@ -70,11 +69,12 @@ sortedDebugCount.forEach((element) => {
 });
 */
 
-// Re-adds the commons values based on the sorted count array.
+// Re-adds the commons values to the rules based on the sorted count array and removes Temp entries.
 for (const [url, ruleTypes] of Object.entries(rules)) {
 	var commonsS = '';
-	var commonsT = '';
+	var commonsTemp = '';
 
+	// In this entry, store new commons index of ruleType css values only if it exists in the new commons list.
 	for (const [ruleType, value] of Object.entries(ruleTypes)) {
 		if (ruleType == 's') {
 			for (let i = 0; i < sortedCount.length; i++) {
@@ -84,10 +84,11 @@ for (const [url, ruleTypes] of Object.entries(rules)) {
 					break;
 				}
 			}
-		} else if (ruleType == 't') {
+		} else if (ruleType == 'temp') {
 			for (let i = 0; i < sortedCount.length; i++) {
 				if (value == sortedCount[i][1]) {
-					commonsT = i
+					commonsTemp = i
+					delete rules[url]['temp'];
 
 					break;
 				}
@@ -95,28 +96,25 @@ for (const [url, ruleTypes] of Object.entries(rules)) {
 		}
 	}
 
-	// Also handle the rare case where both C and S are set and both have commons,
-	// in this case the longest css is used. If length is the same, commons for S is used.
-	if (commonsS !== '' && commonsT !== '') {
-		if (sortedCount[commonsS][1].length >= sortedCount[commonsT][1].length) {
+	// Remove and set rulesType based on if commons exist for css values,
+	// and also andle the rare case where both Temp and S are set and both have commons.
+	// In this case the longest css is used. If length is the same, commons for S is used.
+	if (commonsS !== '' && commonsTemp !== '') {
+		if (commonsS == commonsTemp) {
+			delete rules[url]['s'];
+		} else if (sortedCount[commonsS][1].length >= sortedCount[commonsTemp][1].length) {
 			rules[url]['c'] = commonsS;
 		} else {
-			rules[url]['c'] = commonsT;
-		}
-
-		if (sortedCount[commonsS][1] == sortedCount[rules[url]['c']][1]) {
-			delete rules[url]['s'];
+			rules[url]['c'] = commonsTemp;
 		}
 	} else if (commonsS !== '') {
 
 		rules[url]['c'] = commonsS;
 		delete rules[url]['s'];
 
-	} else if (commonsT !== '') {
-		rules[url]['c'] = commonsT;
+	} else if (commonsTemp !== '') {
+		rules[url]['c'] = commonsTemp;
 	}
-
-	delete rules[url]['t'];
 }
 
 // Convert sortedCount array to newCommons list
